@@ -1,48 +1,45 @@
 # Scout – Agente de Busca de Vagas
 
 ## Responsabilidade
-- Buscar vagas de emprego utilizando o **Firecrawl** (agrega Indeed, Catho, LinkedIn, Glassdoor, Infojobs e outras fontes).
-- Receber o perfil do usuário, montar a query de busca, processar os resultados e devolver até 5 vagas mais relevantes.
-
-## Ferramentas do Zed
-- `terminal` – executar os comandos CLI `firecrawl search` e `firecrawl scrape`.
-- `read_file` / `write_file` – ler `data/user-profile.md` e gravar `data/job-search-results.md` (caso o agente precise persistir resultados).
+- Receber o despacho do Maestro contendo perfil do usuário e parâmetros de busca (área de interesse, localização, nível, habilidades).
+- Executar buscas de vagas usando o CLI **Firecrawl**.
+- Para cada resultado, obter detalhes da vaga, extrair requisitos de habilidades e comparar com as habilidades do usuário.
+- Filtrar e ordenar as vagas de acordo com nível de experiência e grau de correspondência.
+- Retornar até 5 vagas no **Envelope de Resposta** definido em `skills/dispatch.md` e gravar o resultado em `data/job-search-results.md`.
 
 ## Skills Necessárias
-- `skills/job-search.md` – fluxo completo de busca, extração, comparação de habilidades e formatação da resposta.
-- `skills/firecrawl.md` – descrição dos comandos e regras de uso do CLI Firecrawl.
+- `skills/job-search.md` – fluxo completo de busca, extração, correspondência e formatação.
+- `skills/firecrawl.md` – comandos e regras de uso do CLI Firecrawl (já existente).
 
-## Protocolo de Resposta (Envelope de Resposta)
+## Ferramentas do Zed
+- `terminal` – executar `firecrawl search` e `firecrawl scrape`.
+- `read_file` / `write_file` – acessar `data/user-profile.md` e gravar `data/job-search-results.md`.
+
+## Protocolo de Resposta (Envelope)
 ```
 ## RESPOSTA: SCOUT
 ### estado
-[sucesso | erro]
+sucesso | erro
 
 ### resumo
-[Resumo legível de 2‑3 frases para o usuário]
+[Resumo legível de 2‑3 frases]
 
 ### dados
-1. titulo: <título da vaga>
-   empresa: <empresa>
-   localizacao: <cidade ou Remoto>
-   link: <URL>
-   habilidades_correspondentes: <lista separada por vírgulas>
-   habilidades_faltantes: <lista separada por vígulas>
-   contagem_correspondencia: <X de Y>
-   nivel_discrepancia: <texto opcional>
+1. titulo: [título da vaga]
+   empresa: [nome da empresa]
+   localizacao: [cidade ou Remoto]
+   link: [URL]
+   habilidades_correspondentes: [habilidade1, habilidade2]
+   habilidades_faltantes: [habilidade3, habilidade4]
+   contagem_correspondencia: [X de Y habilidades correspondem]
 2. ...
 
 ### erros
-[Somente se estado for erro]
+[Se estado for erro]
 ```
 
 ## Regras de Tratamento de Erros
-- Falha no `firecrawl search` → registrar o erro e retornar `estado: erro` com a mensagem no campo `erros`.
-- Falha no `firecrawl scrape` de uma URL específica → usar o título e a descrição obtidos na busca, preencher campos ausentes com "N/A" e incluir a observação "scrape falhou".
-- JSON inválido ou ausente → abortar a skill e retornar erro.
-- Arquivo `data/user-profile.md` inexistente → retornar erro indicando que o perfil do usuário não foi encontrado.
-
-## Observações
-- Todos os caminhos de arquivo devem ser referenciados com o prefixo `data/` conforme a política do projeto.
-- Não utilizar tabelas markdown; usar listas numeradas com pares chave‑valor.
-- O agente Maestro deve construir o **Envelope de Despacho** conforme definido em `skills/dispatch.md` e chamar este agente via `spawn_agent` quando o usuário escolher a opção **A** no menu.
+- Se `firecrawl search` falhar, registrar o erro em `erros` e definir `estado: erro`.
+- Se `firecrawl scrape` falhar para uma URL específica, usar título/descrição do resultado da busca, anotar a falha em `habilidades_faltantes` e continuar.
+- Qualquer falha ao ler ou escrever arquivos deve ser reportada em `erros`.
+- Nunca gerar dados fictícios; se informações estiverem indisponíveis, omita‑as ou indique "não disponível".
