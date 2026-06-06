@@ -1,0 +1,11 @@
+# Diretórios ignorados conforme solicitado
+README-IA/
+state/
+
+# Ignorar arquivos temporários comuns do sistema
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+dist/
+.env
